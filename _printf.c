@@ -1,44 +1,50 @@
-#include "holberton.h"
+#include "main.h"
+#include <limits.h>
+#include <stdio.h>
+
 /**
- * _printf - A printf clone
- * @format: const pointer to a char - % include formats
- * Return: number of characters printed.
-*/
+ * _printf - produces output according to a format
+ * @format: format string containing the characters and the specifiers
+ * Description: this function will call the get_print() function that will
+ * determine which printing function to call depending on the conversion
+ * specifiers contained into fmt
+ * Return: length of the formatted output string
+ */
 int _printf(const char *format, ...)
 {
-	int i = 0, *count, *count3;
-	int ctbuffer[2];
-	int ctbuffer3[2];
-	char *copyfmt;
-	char copyarray[10000];
-	va_list args;
+	int (*pfunc)(va_list, flags_t *);
+	const char *p;
+	va_list arguments;
+	flags_t flags = {0, 0, 0};
 
-	count = &ctbuffer[0];
-	count3 = &ctbuffer3[0];
-	count[0] = 0;
-	count[1] = -1;
-	if (format != NULL)
+	register int count = 0;
+
+	va_start(arguments, format);
+	if (!format || (format[0] == '%' && !format[1]))
+		return (-1);
+	if (format[0] == '%' && format[1] == ' ' && !format[2])
+		return (-1);
+	for (p = format; *p; p++)
 	{
-		count[1] = 0;
-		copyfmt = _strcpy(copyarray, format);
-		va_start(args, format);
-		while (copyfmt[i] != '\0')
+		if (*p == '%')
 		{
-			if (copyfmt[i] == '%')
+			p++;
+			if (*p == '%')
 			{
-				count3 = print_formats(i, copyfmt, args);
-				if (count3[1] == -1)
-				return (-1);
-				count[1] += count3[1];
-				i += count3[0];
+				count += _putchar('%');
+				continue;
 			}
-			else
-			{
-				count[1] += _putchar(&copyfmt[i]);
-			}
-			i++;
-		}
-		va_end(args);
+			while (get_flag(*p, &flags))
+				p++;
+			pfunc = get_print(*p);
+			count += (pfunc)
+				? pfunc(arguments, &flags)
+				: _printf("%%%c", *p);
+		} else
+			count += _putchar(*p);
 	}
-return (count[1]);
+	_putchar(-1);
+	va_end(arguments);
+	return (count);
+
 }
